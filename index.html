@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>todoList</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div>
+            <p>便捷记事本</p>
+            <div id="app">
+                <div>
+                    <input type="text" v-model="inputValue">
+                    <button v-on:click='addList'>记录</button>
+                </div>        
+                <ul>
+                   <!-- <li v-for='item in list'>{{item}}</li>-->
+                    <todo-item  v-bind:content="item" 
+                                v-bind:index='index'
+                                v-for='(item,index) in list'
+                                v-on:delete='Delete'>
+                    </todo-item>
+                </ul> 
+                
+            </div>
+    </div>
+    
+    <script src="./node_modules/leancloud-storage/dist/av-live-query-min.js"></script>
+    <script>
+        /***创建全局的组件
+        Vue.component("TodoItem",{
+            props:['content'], //子组件接收外部传入的值，通过V-bind:content='item'
+            template:'<li>{{content}}</li>'
+        })
+        ***/
+        var APP_ID = 'Qo7COBr3RDSs65D1hxW50EFk-gzGzoHsz';
+        var APP_KEY = 'wojFRqAvagTlB319zfgTgFz6';
+
+        AV.init({
+        appId: APP_ID,
+        appKey: APP_KEY
+        });
+        var query = new AV.Query('TodoList');
+        query.find().then(function (todos) {
+           let newlist=todos[0].attributes.list
+            app.list=Object.assign(newlist)
+        }).then(function(todos) {
+            // 更新成功
+        }, function (error) {
+            // 异常处理
+        });
+
+        //局部组件如下
+        var TodoItem={
+            props:['content','index'], //子组件接收外部传入的值，通过V-bind:content='item'
+            template:`
+                <li class='todo-li'>{{content}}
+                    <button v-on:click='removeItem'>删除</button>
+                </li>
+
+            `,
+            methods:{
+                removeItem:function(){
+                    this.$emit('delete',this.index)
+                }
+            }
+        }
+        var app=new Vue({
+            el:'#app',
+            components:{
+                TodoItem:TodoItem
+            },
+            data:{
+                list:[],
+                inputValue:''
+            },
+            methods:{
+                addList:function(){
+                    if(this.inputValue===''){
+                        alert('你没有填写')
+                    }else{
+                        this.list.push(this.inputValue)
+                        this.inputValue='' 
+                        this.upload()    
+                    }                     
+                },
+                Delete(index){
+                    this.list.splice(index,1)
+                    this.upload()
+                },
+                upload(){
+                    var todo = AV.Object.createWithoutData('TodoList', '5c3741fb9f54540070e73a8f');
+                    // 修改属性
+                    todo.set('list', this.list);
+                    // 保存到云端
+                    todo.save();
+                                    }
+                                }                 
+        }) 
+    </script>  
+</body>
+</html>
